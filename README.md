@@ -61,3 +61,9 @@ python bin/extract_embeddings.py \
 
 ## Pretrained models
 
+## Credits
+
+The base ELMo structure was forked from https://github.com/allenai/bilm-tf
+
+
+

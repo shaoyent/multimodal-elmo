@@ -386,9 +386,9 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
                         # Add dummy acoustic
                         feed_dict.update({
                             model.tokens_acoustic:
-                                np.zero([batch_size, unroll_steps, 50, 74]),
+                                np.zeros([batch_size, unroll_steps, 50, 74]),
                             model.tokens_acoustic_reverse:
-                                np.zero([batch_size, unroll_steps, 50, 74])
+                                np.zeros([batch_size, unroll_steps, 50, 74])
                         })
 
                 # This runs the train_op, summaries and the "final_state_tensors"
