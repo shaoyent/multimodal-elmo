@@ -1,0 +1,10 @@
+h5py
+numpy
+scikit-learn
+scipy
+sklearn
+tqdm
+validators
+tensorflow-gpu==1.13.1
+torch==1.0.1
+requests
