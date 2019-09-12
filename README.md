@@ -61,6 +61,8 @@ python bin/extract_embeddings.py \
 
 ## Pretrained models
 
+Pretrained weights for the multimodal biLM can downloaded [here](https://drive.google.com/open?id=1DD19Kh8FFE212OpFzRa_NVt_JIOVBcXj) (Google Drive). 
+
 ## Credits
 
 The base ELMo structure was forked from https://github.com/allenai/bilm-tf
