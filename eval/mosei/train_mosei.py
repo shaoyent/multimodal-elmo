@@ -38,7 +38,7 @@ options = {
 
 def main():
 
-    parser = argparse.ArgumentParser(description='Generate confusion2vec embeddings')
+    parser = argparse.ArgumentParser(description='Emotion recognition on CMU-MOSEI')
     parser.add_argument('--seed', default=5566, type=int, help="Random seed")
     parser.add_argument('--save_dir', default='./results', type=str, help="")
     parser.add_argument('--num_epochs', default=20, type=int, help="Number of training epochs")
