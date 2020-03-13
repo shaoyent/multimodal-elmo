@@ -28,7 +28,7 @@ def main(args):
     # else:
     #     data = LMDataset(test_prefix, vocab, **kwargs)
 
-    data = MultimodalDataset(test_prefix, args.vocab_file)
+    data = MultimodalDataset(test_prefix, args.vocab_file, max_acoustic_size_per_token=options['acou_cnn']['max_acoustic_size_per_token'])
 
     extract(options, ckpt_file, data, batch_size=args.batch_size, unroll_steps=args.unroll_steps, outfile=args.out_file)
 

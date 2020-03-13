@@ -162,6 +162,10 @@ def _get_feed_dict_from_X(X, start, end, model, char_inputs, bidirectional):
         feed_dict[model.tokens_acoustic] = X['tokens_acoustic'][start:end]
         if bidirectional: 
             feed_dict[model.tokens_acoustic_reverse] = X['tokens_acoustic_reverse'][start:end]
+    # else :
+    #     feed_dict[model.tokens_acoustic] = np.zeros((256,1,MAX_ACOUSTIC_SIZE,74))
+    #     if bidirectional: 
+    #         feed_dict[model.tokens_acoustic_reverse] = np.zeros((256,1,MAX_ACOUSTIC_SIZE,74))
 
     # now the targets with weights
     next_id_placeholders = [[model.next_token_id, '']]
@@ -340,6 +344,7 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
 
         feed_dict.update({
             model.tokens_acoustic: np.zeros([batch_size, unroll_steps, options['acou_cnn']['max_acoustic_size_per_token'], options['acou_cnn']['acoustics']['dim']])
+                for model in models
         })
         if bidirectional:
             if not char_inputs:
@@ -357,6 +362,7 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
                 })
             feed_dict.update({
                 model.tokens_acoustic_reverse: np.zeros([batch_size, unroll_steps, options['acou_cnn']['max_acoustic_size_per_token'], options['acou_cnn']['acoustics']['dim']])
+                    for model in models
             })
 
         init_state_values, init_embed_acoustic = sess.run([init_state_tensors, model.embedding_acoustic], feed_dict=feed_dict)
@@ -365,7 +371,7 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
         end_training = False
         for epoch_no in range(options['n_epochs']) :
             data_gen = data.iter_batches(batch_size * n_gpus, unroll_steps)
-            for batch_no, batch in enumerate(data_gen, start=1):
+            for batch_no, batch in enumerate(data_gen, start=0):
                 # slice the input in the batch for the feed_dict
                 X = batch
                 feed_dict = {}
@@ -386,9 +392,9 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
                         # Add dummy acoustic
                         feed_dict.update({
                             model.tokens_acoustic:
-                                np.zeros([batch_size, unroll_steps, 50, 74]),
+                                np.zeros([batch_size, unroll_steps, options['acou_cnn']['max_acoustic_size_per_token'], 74]),
                             model.tokens_acoustic_reverse:
-                                np.zeros([batch_size, unroll_steps, 50, 74])
+                                np.zeros([batch_size, unroll_steps, options['acou_cnn']['max_acoustic_size_per_token'], 74])
                         })
 
                 # This runs the train_op, summaries and the "final_state_tensors"
@@ -411,11 +417,12 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
                 else:
                     # also run the histogram summaries
                     ret = sess.run(
-                        [train_op, summary_op, train_perplexity, hist_summary_op] + 
+                        [train_op, summary_op, train_perplexity, hist_summary_op, model.embedding_acoustic_gated] + 
                                                     final_state_tensors,
                         feed_dict=feed_dict
                     )
-                    init_state_values = ret[4:]
+
+                    init_state_values = ret[5:]
                     
 
                 if batch_no % 500 == 0:
@@ -579,34 +586,45 @@ def test(options, ckpt_file, data, batch_size=256):
         t1 = time.time()
         batch_losses = []
         total_loss = 0.0
-        for batch_no, batch in enumerate(
-                                data.iter_batches(batch_size, unroll_steps), start=1):
-            # slice the input in the batch for the feed_dict
-            X = batch
 
-            feed_dict = {}
-            for s1, s2 in zip(init_state_tensors, init_state_values) :
-                feed_dict.update({t: v for t, v in zip(s1, s2)})
+        try :
+            for batch_no, batch in enumerate(
+                                    data.iter_batches(batch_size, unroll_steps), start=1):
+                # slice the input in the batch for the feed_dict
+                X = batch
 
-            feed_dict.update(
-                _get_feed_dict_from_X(X, 0, X['token_ids'].shape[0], model, 
-                                          char_inputs, bidirectional)
-            )
+                feed_dict = {}
+                for s1, s2 in zip(init_state_tensors, init_state_values) :
+                    feed_dict.update({t: v for t, v in zip(s1, s2)})
 
-            ret = sess.run(
-                [model.total_loss, final_state_tensors],
-                feed_dict=feed_dict
-            )
+                feed_dict.update(
+                    _get_feed_dict_from_X(X, 0, X['token_ids'].shape[0], model, 
+                                              char_inputs, bidirectional)
+                )
+                if 'tokens_acoustic' not in X:
+                    # Add dummy acoustic
+                    feed_dict.update({
+                        model.tokens_acoustic:
+                            np.zeros([batch_size, unroll_steps, options['acou_cnn']['max_acoustic_size_per_token'], 74]),
+                        model.tokens_acoustic_reverse:
+                            np.zeros([batch_size, unroll_steps, options['acou_cnn']['max_acoustic_size_per_token'], 74])
+                    })
 
-            loss, init_state_values = ret
-            batch_losses.append(loss)
-            batch_perplexity = np.exp(loss)
-            total_loss += loss
-            avg_perplexity = np.exp(total_loss / batch_no)
+                ret = sess.run(
+                    [model.total_loss, final_state_tensors],
+                    feed_dict=feed_dict
+                )
 
-            print("batch=%s, batch_perplexity=%s, avg_perplexity=%s, time=%s" %
-                (batch_no, batch_perplexity, avg_perplexity, time.time() - t1))
+                loss, init_state_values = ret
+                batch_losses.append(loss)
+                batch_perplexity = np.exp(loss)
+                total_loss += loss
+                avg_perplexity = np.exp(total_loss / batch_no)
 
+                print("batch=%s, batch_perplexity=%s, avg_perplexity=%s, time=%s" %
+                    (batch_no, batch_perplexity, avg_perplexity, time.time() - t1))
+        except StopIteration :
+            pass
 
     avg_loss = np.mean(batch_losses)
     print("FINSIHED!  AVERAGE PERPLEXITY = %s" % np.exp(avg_loss))
@@ -719,7 +737,7 @@ def extract(options, ckpt_file, data, batch_size=256, unroll_steps=20, outfile='
             for i in range(batch_size):
                 sentence_length = batch['lengths'][i]
                 if sentence_length == 0:
-                    print("Skipping 0 length sentence at {}".format(i))
+                    print(f"Skipping 0 length sentence for key {batch['keys'][i]}")
                     continue
                 key = batch['keys'][i]
                 new_dataset['embeddings'][key] = [np.average(elmo_outputs[j][i, 0:sentence_length], axis=0) for j in range(len(elmo_outputs))]

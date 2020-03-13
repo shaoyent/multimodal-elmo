@@ -291,6 +291,11 @@ def _get_batch(generator, batch_size, num_steps, max_word_length):
                         # No more data, exhaust current streams and quit
                         no_more_data = True
                         break
+                    except Exception as e :
+                        print(e)
+                        print("No more data")
+                        no_more_data = True
+                        break
 
                 how_many = min(len(cur_stream[i][0]) - 1, num_steps - cur_pos)
                 next_pos = cur_pos + how_many
@@ -465,12 +470,13 @@ class BidirectionalLMDataset(object):
             yield X
 
 class MultimodalDataset(object):
-    def __init__(self, filepattern, vocab, test=False, shuffle_on_load=False, exclude_split=None):
+    def __init__(self, filepattern, vocab, test=False, shuffle_on_load=False, exclude_split=None, dataset_name="CMU_MOSEI", max_acoustic_size_per_token=200):
         self.dataset = pickle.load(open(filepattern, 'rb'))
 
-        self.text_field = 'CMU_MOSEI_TimestampedWords'
-        self.acoustic_field = 'CMU_MOSEI_COVAREP'
-        self.label_field = 'CMU_MOSEI_LabelsEmotions'
+        self.text_field = f'{dataset_name}_TimestampedWords'
+        self.acoustic_field = f'{dataset_name}_COVAREP'
+        self.label_field = f'{dataset_name}_LabelsEmotions'
+        self.label_field = f'{dataset_name}_LabelsSentiment'
 
 
         self.max_word_length = 50
@@ -494,7 +500,8 @@ class MultimodalDataset(object):
         if shuffle_on_load : 
             random.shuffle(self.keys)
 
-        self.max_acoustic_size_per_token = 50
+        self.max_acoustic_size_per_token = max_acoustic_size_per_token
+
         self.acoustic_dim = 74
 
         acoustic_feature = self.dataset[self.acoustic_field][self.keys[0]]['features']
@@ -551,7 +558,7 @@ class MultimodalDataset(object):
                                 acoustic_feature = self.dataset[self.acoustic_field][key]['features']
 
                             feat_len = acoustic_feature.shape[0]
-                            acoustic_feature = acoustic_feature.reshape((feat_len, self.max_word_length, self.acoustic_dim))
+                            acoustic_feature = acoustic_feature.reshape((feat_len, self.max_acoustic_size_per_token, self.acoustic_dim))
 
                             acoustic_feature[np.isposinf(acoustic_feature)] = 1e10
                             acoustic_feature[np.isneginf(acoustic_feature)] = -1e10
@@ -643,7 +650,7 @@ class MultimodalDataset(object):
                 acoustic_feature = self.dataset[self.acoustic_field][key]['features']
 
             feat_len = acoustic_feature.shape[0]
-            acoustic_feature = acoustic_feature.reshape((feat_len, self.max_word_length, self.acoustic_dim))
+            acoustic_feature = acoustic_feature.reshape((feat_len, self.max_acoustic_size_per_token, self.acoustic_dim))
 
             acoustic_feature[np.isposinf(acoustic_feature)] = 1e10
             acoustic_feature[np.isneginf(acoustic_feature)] = -1e10

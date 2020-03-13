@@ -2,6 +2,7 @@ import os,sys
 sys.path.insert(0, os.getcwd())
 
 import pickle
+import json
 
 import argparse
 import tensorflow as tf
@@ -79,6 +80,10 @@ def main(args):
     vocab = load_vocab(args.vocab_file, 50)
 
     # define the options
+    if args.options is not None :
+        with open(args.options, 'r') as fid:
+            options = json.load(fid)
+
     batch_size = args.batch_size  # batch size for each GPU
     n_gpus = args.n_gpus
 
@@ -96,7 +101,7 @@ def main(args):
 
         from mmsdk.mmdatasdk.dataset.standard_datasets.CMU_MOSEI.cmu_mosei_std_folds import standard_test_fold
         test_split = standard_test_fold
-        data = MultimodalDataset(prefix, args.vocab_file, exclude_split=test_split)
+        data = MultimodalDataset(prefix, args.vocab_file, exclude_split=test_split, max_acoustic_size_per_token=options['acou_cnn']['max_acoustic_size_per_token'])
 
 
     # number of tokens in training data (this for 1B Word Benchmark)
@@ -126,6 +131,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_epochs', type=int, help='Number of epochs', default=None)
     parser.add_argument('--lr', type=float, help='Learning rate', default=None)
     parser.add_argument('--n_gpus', type=int, help='Number of GPUs to use', default=1)
+    parser.add_argument('--options', type=str, help='Path to custom options file', default=None)
 
     args = parser.parse_args()
     main(args)

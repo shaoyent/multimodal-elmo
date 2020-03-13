@@ -16,7 +16,11 @@ saved_dataset = './data/cmu_mosei_dataset_fill.pkl'
 
 acoustic_field = 'CMU_MOSEI_COVAREP'
 text_field = 'CMU_MOSEI_TimestampedWords'
-label_field = 'CMU_MOSEI_LabelsEmotions'
+label_field_emo = 'CMU_MOSEI_LabelsEmotions'
+label_field_sen = 'CMU_MOSEI_LabelsSentiment'
+
+# Maximum frame size of acoustic features
+max_feat_len = 200
 
 
 # create folders for storing the data
@@ -72,7 +76,6 @@ def avg(intervals: np.array, features: np.array) -> np.array:
         return features
 
 def fill(intervals: np.array, features: np.array) -> np.array:
-    max_feat_len = 50
     try:
         if features.shape[1] != 74 :
             return avg(intervals, features)
@@ -88,9 +91,13 @@ def fill(intervals: np.array, features: np.array) -> np.array:
 # first we align to words with averaging, collapse_function receives a list of functions
 dataset.align(text_field, collapse_functions=[fill])
 
-label_recipe = {label_field: os.path.join(DATA_PATH, label_field + '.csd')}
-dataset.add_computational_sequences(label_recipe, destination=None)
-dataset.align(label_field)
+label_recipe_emo = {label_field_emo: os.path.join(DATA_PATH, label_field_emo + '.csd')}
+dataset.add_computational_sequences(label_recipe_emo, destination=None)
+dataset.align(label_field_emo)
+
+# label_recipe_sen = {label_field_sen: os.path.join(DATA_PATH, label_field_sen + '.csd')}
+# dataset.add_computational_sequences(label_recipe_sen, destination=None)
+# dataset.align(label_field_sen)
 
 pickle.dump(dataset, open(saved_dataset,"wb"))
 
