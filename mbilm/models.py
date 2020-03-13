@@ -477,22 +477,22 @@ class MultimodalModel(object):
 
         def combine_method(a, b, method="sigmoid", lm_training=False):
             if self.options['combine'] == 'sigmoid' :
-                gate_fn = tf.nn.sigmoid
+                f_b = tf.nn.sigmoid(b)
             elif self.options['combine'] == 'multiply' :
-                gate_fn = lambda x : x
+                f_b = b
             elif self.options['combine'] == 'concat' :
-                c = tf.concat((a,b), axis=-1)
-                return c
+                return tf.concat((a,b), axis=-1), b
+            elif self.options['combine'] == 'none' :
+                return a, b
                 
-            c = tf.multiply(a, gate_fn(b))
-            return c
+            return tf.multiply(a, f_b), f_b
 
-        self.mme_embedding = combine_method(self.embedding, self.embedding_acoustic, \
+        self.mme_embedding, self.embedding_acoustic_gated = combine_method(self.embedding, self.embedding_acoustic, \
                                                 method=self.options['combine'],
                                                 lm_training=self.lm_training
                                             )
         if self.bidirectional:
-            self.mme_embedding_reverse = combine_method(self.embedding_reverse, self.embedding_acoustic_reverse, \
+            self.mme_embedding_reverse, self.embedding_acoustic_gated_reverese = combine_method(self.embedding_reverse, self.embedding_acoustic_reverse, \
                                                         method=self.options['combine'],
                                                         lm_training=self.lm_training
                                                         )
@@ -604,13 +604,14 @@ class MultimodalModel(object):
                 _lstm_output_unpacked_1)
 
             lstm_outputs.append(lstm_output_flat)
-            self.elmo_outputs.append((tf.stack(_lstm_output_unpacked_0, axis=1), tf.stack(_lstm_output_unpacked_1, axis=1)))
+            self.elmo_outputs.append((lstm_input, tf.stack(_lstm_output_unpacked_0, axis=1), tf.stack(_lstm_output_unpacked_1, axis=1)))
 
         self._build_loss(lstm_outputs)
 
         self.elmo_outputs = [ \
                     tf.concat([self.elmo_outputs[i][0] for i in range(len(self.elmo_outputs))], axis=-1) , \
-                    tf.concat([self.elmo_outputs[i][1] for i in range(len(self.elmo_outputs))], axis=-1) ]
+                    tf.concat([self.elmo_outputs[i][1] for i in range(len(self.elmo_outputs))], axis=-1) , \
+                    tf.concat([self.elmo_outputs[i][2] for i in range(len(self.elmo_outputs))], axis=-1) ]
 
     def _build_loss(self, lstm_outputs):
         '''

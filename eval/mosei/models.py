@@ -14,7 +14,7 @@ class DNN(nn.Module):
     def __init__(self, options):
         super(DNN, self).__init__()
 
-        mixture_size = 2
+        mixture_size = 3
         trainable = True
         initial_scalar_parameters = [0, 1]
         dropout = 0.2
@@ -115,10 +115,9 @@ class mosei_dataset(Dataset):
     def __getitem__(self, idx):
         key = self.keys[idx]
 
-        embedding_0 = torch.from_numpy(self.dataset['embeddings'][key][0]).unsqueeze(dim=0)
-        embedding_1 = torch.from_numpy(self.dataset['embeddings'][key][1]).unsqueeze(dim=0)
+        embedding_list = [ torch.from_numpy(self.dataset['embeddings'][key][i]).unsqueeze(dim=0) for i in range(len(self.dataset['embeddings'][key])) ]
 
-        embedding = torch.cat((embedding_0, embedding_1), dim=0)
+        embedding = torch.cat(embedding_list, dim=0)
         # label = torch.from_numpy(self.dataset['labels'][key]) + 3
         label = np.greater(self.dataset['labels'][key], 0).astype(np.float32).reshape(-1,)
 
