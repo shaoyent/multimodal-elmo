@@ -14,7 +14,7 @@ sklearn
 tqdm
 validators
 requests
-tensorflow-gpu==1.15.0
+tensorflow-gpu==1.15.2
 torch==1.0.1
 ```
 
