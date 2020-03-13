@@ -369,9 +369,9 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
 
         t1 = time.time()
         end_training = False
-        for epoch_no in range(options['n_epochs']) :
+        for epoch_no in range(1,options['n_epochs']+1) :
             data_gen = data.iter_batches(batch_size * n_gpus, unroll_steps)
-            for batch_no, batch in enumerate(data_gen, start=0):
+            for batch_no, batch in enumerate(data_gen, start=1):
                 # slice the input in the batch for the feed_dict
                 X = batch
                 feed_dict = {}

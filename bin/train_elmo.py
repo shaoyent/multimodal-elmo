@@ -40,7 +40,7 @@ options = {
                         'HMPDM_19','HMPDM_20','HMPDM_21','HMPDM_22','HMPDM_23','HMPDM_24',
                         'HMPDD_0','HMPDD_1','HMPDD_2','HMPDD_3','HMPDD_4','HMPDD_5', 
                         'HMPDD_6','HMPDD_7','HMPDD_8','HMPDD_9','HMPDD_10','HMPDD_11','HMPDD_12']},
-      'max_acoustic_size_per_token': 50,
+      'max_acoustic_size_per_token': 200,
       'filters': [[3, 32],
        [3, 32],
        [3, 16] 
@@ -76,6 +76,7 @@ options = {
 
 
 def main(args):
+    global options
     # load the vocab
     vocab = load_vocab(args.vocab_file, 50)
 
@@ -90,13 +91,11 @@ def main(args):
     prefix = args.train_prefix
 
     if '1-billion' in prefix :
-        train_1b = True
         n_train_tokens = 768648884 # 1-billion
 
         data = BidirectionalLMDataset(prefix, vocab, test=False,
                                           shuffle_on_load=True)
     else :
-        train_1b = False
         n_train_tokens = 651037 # mosei
 
         from mmsdk.mmdatasdk.dataset.standard_datasets.CMU_MOSEI.cmu_mosei_std_folds import standard_test_fold
