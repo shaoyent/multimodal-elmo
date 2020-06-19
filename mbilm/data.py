@@ -476,7 +476,7 @@ class MultimodalDataset(object):
         self.text_field = f'{dataset_name}_TimestampedWords'
         self.acoustic_field = f'{dataset_name}_COVAREP'
         self.label_field = f'{dataset_name}_LabelsEmotions'
-        self.label_field = f'{dataset_name}_LabelsSentiment'
+        # self.label_field = f'{dataset_name}_LabelsSentiment'
 
 
         self.max_word_length = 50
