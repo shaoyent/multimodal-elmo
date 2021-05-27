@@ -77,7 +77,7 @@ python eval/mosei/train_mosei.py \
 
 ## Pretrained models
 
-Pretrained weights for the multimodal biLM can be downloaded [here](https://drive.google.com/open?id=1DD19Kh8FFE212OpFzRa_NVt_JIOVBcXj) (Google Drive). 
+Pretrained weights for the multimodal biLM can be downloaded [here](https://drive.google.com/open?id=151rg0u3PSvPohYiXvHSOFb8TeB2O1LQI) (Google Drive). 
 
 ## Credits
 
